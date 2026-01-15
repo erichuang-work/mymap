@@ -33,10 +33,18 @@
 
             const data = { name: name, lat: e.latlng.lat, lng: e.latlng.lng, desc: "網頁新增" };
 
-            fetch(gasUrl, { method: 'POST', body: JSON.stringify(data) })
-                .then(() => {
-                    L.marker([data.lat, data.lng]).addTo(map).bindPopup(name).openPopup();
-                    alert("儲存成功！");
+          fetch(gasUrl, {
+    method: 'POST',
+    mode: 'no-cors', // 💡 加上這行可以強制避開 CORS 檢查
+    cache: 'no-cache',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+})
+.then(() => {
+    // 💡 因為用了 no-cors，瀏覽器回傳會是空的，所以直接執行成功後的動作
+    alert("景點已送出，請稍後檢查試算表！");
+    L.marker([data.lat, data.lng]).addTo(map).bindPopup(data.name).openPopup();
+});
                 });
         });
 
@@ -46,4 +54,5 @@
 </body>
 
 </html>
+
 
