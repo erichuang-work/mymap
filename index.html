@@ -2,9 +2,14 @@
 <html>
 <head>
     <title>我的雲端地圖</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@latest/dist/geosearch.css" />
-    <style> #map { width: 100%; height: 100vh; margin: 0; } </style>
+    <style> 
+        body { margin: 0; padding: 0; }
+        #map { width: 100%; height: 100vh; } 
+    </style>
 </head>
 <body>
     <div id="map"></div>
@@ -14,9 +19,11 @@
     <script>
         // 1. 初始化地圖
         const map = L.map('map').setView([25.03, 121.56], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-        // 2. 加入搜尋功能 (免費 Nominatim)
+        // 2. 加入搜尋功能
         const searchControl = new GeoSearch.GeoSearchControl({
             provider: new GeoSearch.OpenStreetMapProvider(),
             style: 'bar',
@@ -25,39 +32,55 @@
         });
         map.addControl(searchControl);
 
-        // 3. 點擊地圖新增地點並存入 Google 試算表
+        // 3. 設定你的 GAS 網址與 CSV 網址
         const gasUrl = 'https://script.google.com/macros/s/AKfycbyvtQRocbF-obUe4Kpa6atpCag-VlKxyFmWQAjvkT_FDltGMQgbepfFo7VFRaNJy9rgCg/exec';
+        const csvUrl = '你的試算表CSV發佈網址'; // <--- 記得補上這個，不然舊點位出不來
+
+        // 點擊地圖新增地點
         map.on('click', function(e) {
             const name = prompt("請輸入景點名稱：");
             if (!name) return;
 
-            const data = { name: name, lat: e.latlng.lat, lng: e.latlng.lng, desc: "網頁新增" };
+            const data = { 
+                name: name, 
+                lat: e.latlng.lat, 
+                lng: e.latlng.lng, 
+                desc: "網頁新增" 
+            };
 
-         fetch(gasUrl, {
-    method: 'POST',
-    mode: 'no-cors', // 💡 關鍵：繞過 CORS 檢查
-    cache: 'no-cache',
-    headers: {
-        'Content-Type': 'application/json' // 注意：no-cors 下部分瀏覽器會忽略此 header，但保留無妨
-    },
-    body: JSON.stringify(data)
-})
-.then(() => {
-    // 💡 注意：在 no-cors 模式下，res.json() 會報錯，所以我們不處理回傳值
-    alert("請求已送出！請檢查試算表。");
-    L.marker([data.lat, data.lng]).addTo(map).bindPopup(data.name).openPopup();
-})
-.catch(err => {
-    console.error("連線錯誤：", err);
-});
+            fetch(gasUrl, {
+                method: 'POST',
+                mode: 'no-cors', 
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(() => {
+                alert("請求已送出！請檢查試算表。");
+                L.marker([data.lat, data.lng]).addTo(map).bindPopup(data.name).openPopup();
+            })
+            .catch(err => {
+                console.error("連線錯誤：", err);
+            });
+        }); // <--- 原本漏掉這兩個括號
 
-        // 4. (選填) 從發佈的 CSV 載入舊有的所有地點
-        // fetch('你的CSV網址').then(...解析與畫出 Marker...);
+        // 4. 從 CSV 載入舊有的所有地點 (如果有設定 csvUrl)
+        if (csvUrl !== '你的試算表CSV發佈網址') {
+            fetch(csvUrl)
+            .then(res => res.text())
+            .then(csvText => {
+                const rows = csvText.split('\n').slice(1);
+                rows.forEach(row => {
+                    const cols = row.split(',');
+                    if (cols.length >= 3) {
+                        const name = cols[0];
+                        const lat = parseFloat(cols[1]);
+                        const lng = parseFloat(cols[2]);
+                        L.marker([lat, lng]).addTo(map).bindPopup(name);
+                    }
+                });
+            });
+        }
     </script>
 </body>
-
 </html>
-
-
-
-
