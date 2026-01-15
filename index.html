@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>我的雲端地圖</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@latest/dist/geosearch.css" />
+    <style> #map { width: 100%; height: 100vh; margin: 0; } </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-geosearch@latest/dist/bundle.min.js"></script>
+    <script>
+        // 1. 初始化地圖
+        const map = L.map('map').setView([25.03, 121.56], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // 2. 加入搜尋功能 (免費 Nominatim)
+        const searchControl = new GeoSearch.GeoSearchControl({
+            provider: new GeoSearch.OpenStreetMapProvider(),
+            style: 'bar',
+            autoClose: true,
+            keepResult: true
+        });
+        map.addControl(searchControl);
+
+        // 3. 點擊地圖新增地點並存入 Google 試算表
+        const gasUrl = 'https://script.google.com/a/macros/richitech.com.tw/s/AKfycbzael8mmPGOJifUx4VjLBREQ2CGxdEmWni0hfyNlFCh_NZ12AjUyZ6ixPhAEnzExq0V/exec';
+        map.on('click', function(e) {
+            const name = prompt("請輸入景點名稱：");
+            if (!name) return;
+
+            const data = { name: name, lat: e.latlng.lat, lng: e.latlng.lng, desc: "網頁新增" };
+
+            fetch(gasUrl, { method: 'POST', body: JSON.stringify(data) })
+                .then(() => {
+                    L.marker([data.lat, data.lng]).addTo(map).bindPopup(name).openPopup();
+                    alert("儲存成功！");
+                });
+        });
+
+        // 4. (選填) 從發佈的 CSV 載入舊有的所有地點
+        // fetch('你的CSV網址').then(...解析與畫出 Marker...);
+    </script>
+</body>
+</html>
