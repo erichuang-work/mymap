@@ -33,17 +33,22 @@
 
             const data = { name: name, lat: e.latlng.lat, lng: e.latlng.lng, desc: "網頁新增" };
 
-          fetch(gasUrl, {
+         fetch(gasUrl, {
     method: 'POST',
-    mode: 'no-cors', // 💡 加上這行可以強制避開 CORS 檢查
+    mode: 'no-cors', // 💡 關鍵：繞過 CORS 檢查
     cache: 'no-cache',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+        'Content-Type': 'application/json' // 注意：no-cors 下部分瀏覽器會忽略此 header，但保留無妨
+    },
     body: JSON.stringify(data)
 })
 .then(() => {
-    // 💡 因為用了 no-cors，瀏覽器回傳會是空的，所以直接執行成功後的動作
-    alert("景點已送出，請稍後檢查試算表！");
+    // 💡 注意：在 no-cors 模式下，res.json() 會報錯，所以我們不處理回傳值
+    alert("請求已送出！請檢查試算表。");
     L.marker([data.lat, data.lng]).addTo(map).bindPopup(data.name).openPopup();
+})
+.catch(err => {
+    console.error("連線錯誤：", err);
 });
                 });
         });
@@ -54,5 +59,6 @@
 </body>
 
 </html>
+
 
 
